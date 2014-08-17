@@ -1,0 +1,521 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<style type="text/css" media="screen">
+    body{
+        padding: 0px;
+        margin: 0px;
+    }
+    #SmlayersContainer{
+    }
+    .layers{
+        display: block;
+        float:left;
+        width:100%;
+    }
+    .sectionTitle{
+        font-weight: bold;
+        font-size:14px;
+        font-family: 'Arial', sans-serif;
+
+    }
+    #color-cont{
+        width: 200px; 
+        position:relative; 
+        background-color:#FFF;
+        padding: 5px 3px; 
+        border: 1px solid;
+    }
+    
+</style>
+<body>
+    <div id="export" style="z-index:9999; position:absolute; top:10px; right:200px;">
+        <textarea id="exportText"></textarea><br />
+        <a id="exportObjEl" href="#" onmouseup="c.exportObjLnk()">Export Obj</a>
+    </div>
+    <div id="import" style="z-index:9999; position:absolute; top:80px; right:200px;">
+        <textarea id="importText" contenteditable="true"></textarea><br />
+        <a id="importObjEl" href="#" onmouseup="c.importObjLnk()">Import Obj</a>
+    </div>
+    <div id="controls" style="position:absolute; z-index:9999; right: 0px; background-color:#CCC; overflow:auto; height: 500px;">
+        <div>
+            <a href="#" id="gridDivLnk" onmouseup="c.resetGrid(gridDiv.value)">Set Grid Division to...</a><br />
+            <input type="text" id="gridDiv" value="1"><br />
+        </div>
+        <a href="#" onclick="c.zoom(-1)">Zoom +</a><br />
+        <a href="#" onclick="c.zoom(1)">Zoom -</a><br />
+        <a href="#" onclick="c.setTool(1)">draw</a><br />
+        <a href="#" onclick="c.setTool(0)">Eraser</a><br />
+        <a href="#" onclick="c.setTool(2)">Bounds</a><br />
+        <div id="color-cont"><span class="sectionTitle">Color</span></div>
+        <div id="SmlayersContainer">
+            <a href="#" id="addLayer">Add</a>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" charset="utf-8" src="js/Helper.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/gridObj.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/pixObj.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/Layer.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/Cursor.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/TrigObject.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/Bar.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/ColorBox.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/Tool.js"></script>
+<script type="text/javascript" charset="utf-8">
+    function CanaryCanvas(_w, _h){
+        /* Let's set up the canvas variables - - - */
+        this.containerEl;
+            this.width = _w;
+            this.height = _h;
+        this.layerContainerEl;
+            this.layerWidth = (this.width+400)*2;
+            this.layerHeight = (this.width+400)*2;
+            this.layerNum = 0;
+            this.curLayer = 0;
+        this.CursorContainerEl;
+            this.cursorArray = new Array();
+            this.mouseDown = false;
+        this.boundsContainerEl;
+
+        this.frames = new Array();
+        this.layers = new Array();
+
+        this.tool = 1;
+
+        this.color = {r: 0, g: 0, b: 0, a: 1}
+
+
+        /* Now Create the Container and put it in the a container or the document */
+        //ToDo - Check for container.
+        this.create();
+    }
+function Map(_obj){
+    this.obj = _obj || {};
+    this.obj.size = _obj.size || 32;
+    this.obj.canvas = _obj.canvas || null;
+}
+
+Map.prototype.generate = function(){
+    var c = this.obj.canvas;
+    this.rect(0,0,this.obj.size,this.obj.size);
+    var origDiff = Math.floor(Math.random()*10+(this.obj.size/3));
+    for(i = 0; i <= 4; i++){
+        var diff = (origDiff-3) + Math.floor(Math.random()*3);
+        this.rect((this.obj.size/5)*i,0,this.obj.size/5,diff);
+        this.rect((this.obj.size/5)*i,diff+4,this.obj.size/5,(this.obj.size - diff)-5);
+        //this.rect(((this.obj.size/4)-2)*i,diff+ 4,this.obj.size/4-i,10);
+    }
+}
+Map.prototype.rect = function(_x,_y,_w,_h){
+    for(var i = _x; i<=_x+_w; i++){
+            for(j = _y; j<=_y+_h; j++)
+                if(i == _x || i == _x+_w || j == _y || j == _y+_h){
+                    c.layers[c.curLayer].addPixel(i*cGrid.size, j*cGrid.size, Helper.color.set({r:100, g:100, b:100, a:.7}).ret());
+                }else{
+                    c.layers[c.curLayer].addPixel(i*cGrid.size, j*cGrid.size, Helper.color.set({r:200, g:100, b:200, a:.2}).ret());
+                //c.layers[c.curLayer].addPixel(i*cGrid.size, j*cGrid.size, Helper.color.set({r:200, g:200, b:200, a:.7}).ret());
+            }
+        }
+    c.layers[c.curLayer].draw();
+}
+
+    CanaryCanvas.prototype.create = function(){
+        this.colorBox = new ColorBox();
+        this.colorBox.create(Helper.id('color-cont'));
+        this.container = Helper.makeEl({
+                'id':'cnry-container',
+                'css':{
+                    width: this.width+'px', 
+                    height: this.height +'px',
+                    position: 'relative',
+                    float: 'left',
+                    border: '#0ff 1px solid',
+                    overflow: 'auto',
+                    boxSizing: 'border-box'
+                    }
+                })
+        document.body.appendChild(this.container);
+
+        this.layerContainerEl = Helper.makeEl({
+                'id':'cnry-layers',
+                'css':{
+                    width: this.layerWidth+'px', 
+                    height: this.layerHeight +'px',
+                    position: 'absolute',
+                    boxSizing: 'border-box'
+                    }
+                })
+        this.container.appendChild(this.layerContainerEl);
+
+        this.cursorContainerEl = Helper.makeEl({
+                'id':'cnry-cursor',
+                'css':{
+                    width: this.layerWidth+'px', 
+                    height: this.layerHeight +'px',
+                    position: 'absolute',
+                    boxSizing: 'border-box'
+                    }
+                })
+        this.container.appendChild(this.cursorContainerEl);
+
+        this.boundsContainerEl = Helper.makeEl({
+                'id':'cnry-bounds',
+                'css':{
+                    width: this.layerWidth+'px', 
+                    height: this.layerHeight +'px',
+                    position: 'absolute',
+                    boxSizing: 'border-box'
+                    }
+                })
+        this.container.appendChild(this.boundsContainerEl);
+
+        this.overEl = Helper.makeEl({
+                'id': 'cnry-over',
+                'css':{
+                    width: this.layerWidth+'px', 
+                    height: this.layerHeight +'px',
+                    position: 'absolute',
+                    boxSizing: 'border-box',
+                    cursor: 'none',
+                    zIndex: '9999'
+                    },
+                'attr':{
+                    tabIndex: 1
+                    }
+                });
+        this.container.appendChild(this.overEl);
+        this.create_layer();
+    }
+
+
+    CanaryCanvas.prototype.importObjLnk = function(){
+        c.importObj();
+    }
+var ObjText
+var scrip = Helper.makeEl({id: 'scriptImport', type:'script'});
+    CanaryCanvas.prototype.importObj = function(){
+        ObjText = Helper.id('importText').value; 
+        scrip.text = ObjText;
+        document.body.appendChild(scrip);
+        this.layers[this.curLayer].draw2();
+    }
+document.getElementById('importText').onclick = function(){
+    this.focus();
+}
+document.getElementById('exportText').onclick = function(){
+    this.focus();
+};
+    CanaryCanvas.prototype.exportObjLnk = function(){
+        c.exportObj();
+    }
+    CanaryCanvas.prototype.exportObj = function(){
+        //console.log('test!');
+        document.getElementById('exportText').innerHTML = 'var bounds = '+JSON.stringify(boundsArray)+'; var pixObj = ' + JSON.stringify(c.layers[this.curLayer].pixSet);
+    }
+
+    CanaryCanvas.prototype.importImage = function(img){
+        var image = new Image();
+        image.onload = function(){
+            console.log(c);
+            c.layers[0].ctx.drawImage(image, 0,0);
+        }
+        image.src = img;
+        c.create_layer();
+    }
+
+    CanaryCanvas.prototype.setTool = function(_tool){
+        this.tool = _tool;
+    }
+    CanaryCanvas.prototype.resetGrid = function(_div){
+        cGrid.division = _div;
+        cGrid.render();
+    }
+    CanaryCanvas.prototype.zoom = function(_zIntr){
+        var zoom = cGrid.size - _zIntr;
+        cGrid.setSize(zoom);
+        this.cursorArray[0].resize();
+        
+        for(var i = 0; i <= boundsRefArray.length-1; i++){
+            boundsRefArray[i].style.top = boundsArray[i].y1*cGrid.size+'px';
+            boundsRefArray[i].style.left = boundsArray[i].x1*cGrid.size+'px';
+            boundsRefArray[i].style.width = ((boundsArray[i].x2 - boundsArray[i].x1)*cGrid.size) - 4+'px';
+            boundsRefArray[i].style.height = ((boundsArray[i].y2 - boundsArray[i].y1)*cGrid.size) - 4+'px';
+        }
+        for(var i = 0; i<=this.layers.length-1; i++){
+            this.layers[i].draw();
+        }
+    }
+    CanaryCanvas.prototype.setColor = function(){
+        this.color.r = Helper.id('rInp').value;
+        this.color.g = Helper.id('gInp').value;
+        this.color.b = Helper.id('bInp').value;
+        this.color.a = Helper.id('aInp').value;
+        Helper.id('colorBox').style.backgroundColor = 'rgba('+this.color.r+','+this.color.g+','+this.color.b+','+this.color.a+')';
+    }
+
+    CanaryCanvas.prototype.add_Cursor = function(){
+        this.cursorArray.push(new Cursor(Helper.id(this.cursorContainerEl.id)));
+    }
+
+    CanaryCanvas.prototype.switch_layer = function(_layr){
+        this.curLayer = _layr;
+    }
+
+    CanaryCanvas.prototype.create_new = function(){
+        c.create_layer();
+    }
+    CanaryCanvas.prototype.remove_layer = function(_layr){
+        console.log(this.curLayer);
+        this.curLayer = 0;
+        /*
+        if(this.layers[_layr].layerNum == this.curLayer){
+        }
+        */
+        Helper.id('SmlayersContainer').removeChild(Helper.id('layer'+this.layers[_layr].layerNum));
+        this.layerContainerEl.removeChild(this.layers[_layr].canvas);
+        for(i = this.layers.length-1; i >=_layr; i--){
+            if(i == _layr){
+                console.log('splicing!');
+                this.layers.splice(_layr, 1);
+            }
+            this.layers[i].layerNum --;
+            console.log('other Layer!!!');
+        }
+        //console.log(Helper.id('layersContainrEl'));
+    }
+    CanaryCanvas.prototype.create_layer = function(){
+        var layer = Helper.makeEl({
+                id:'layer'+this.layerNum,
+                class:'layers',
+                type:'div',
+                attr:{
+                    href: "#"
+                }
+                });
+        layer.innerHTML = "<a href='#'>Layer"+this.layerNum+"</a> <a href='#'>rem</a>";
+
+        this.layers.push(new Layer(this.layerWidth, this.layerHeight, this.layerContainerEl, this.layerNum));
+        this.curLayer = this.layerNum;
+        this.layerNum ++;
+        console.log(this.layers);
+        document.getElementById('SmlayersContainer').appendChild(layer);
+    }
+    var c = new CanaryCanvas(window.innerWidth-420, window.innerHeight);
+    var cGrid = makeGrid(c.layerContainerEl, 10);
+
+    c.add_Cursor();
+    /*
+    CanaryCanvas.prototype.create_frame = function(){
+
+    }
+    function Frame(){
+
+
+    }
+    */
+
+
+    var divNum = 0;
+    var curEl;
+    var mdX;
+    var mdY;
+    var bounds = {};
+    var boundsRefArray = new Array();
+    var boundsArray = new Array();
+
+
+    /*Check if mouse is down in document....*/
+    document.onmousedown = function(){
+        document.mouseIsDown = true;
+        return false;
+    }
+    document.onmouseup = function(){
+        document.mouseIsDown = false;
+    }
+
+    c.overEl.onmousedown = function(e){
+        mdX = e.offsetX;
+        mdY = e.offsetY;
+        //Eraser
+        if(c.tool == 0){
+            c.layers[c.curLayer].remPixel(c.cursorArray[0].xPos, c.cursorArray[0].yPos);
+            c.layers[c.curLayer].draw();
+        }
+        //Draw
+        if(c.tool == 1){
+            /*
+                //c.layers[c.layerNum].lastPixOb = 'x'+c.cursorArray[0].xPos+'y'+c.cursorArray[0].yPos;
+             */
+
+            console.log(c.colorBox.colorObj);
+            var ctx = c.layers[c.curLayer].ctx; 
+            c.colorBox.addToSet();
+            c.layers[c.curLayer].addPixel(c.cursorArray[0].xPos, c.cursorArray[0].yPos, c.colorBox.colorObj);
+            /*
+            for(var i = -1; i < 2; i++){
+                c.layers[c.curLayer].addPixel(c.cursorArray[0].xPos+i*cGrid.size, c.cursorArray[0].yPos);
+                for(var j = -1; j<2; j++){
+                    c.layers[c.curLayer].addPixel(c.cursorArray[0].xPos, c.cursorArray[0].yPos+j*cGrid.size);
+                }
+            }
+            */
+            c.layers[c.curLayer].draw();
+        }
+        //Bounds
+        if(c.tool == 2){
+            divNum ++;
+            curEl = Helper.makeEl({
+                    id:'div'+divNum,
+                    css: {
+                        backgroundColor: 'rgba('+
+                             Math.floor(Math.random()*255)+','+
+                             Math.floor(Math.random()*255)+','+
+                             Math.floor(Math.random()*255)+','+
+                             '.4)',
+                        position: 'absolute',
+                        borderSizing: 'border-box',
+                        top: cGrid.snap(e.offsetY - c.cursorArray[0].offset)+'px',
+                        left: cGrid.snap(e.offsetX- c.cursorArray[0].offset)+'px',
+                        border: '2px solid',
+                        zIndex: 9959
+                    }
+                    });
+                boundsRefArray.push(curEl);
+                c.boundsContainerEl.appendChild(curEl);
+        }
+        c.mouseDown = true;
+        return false;
+    }
+var s = setInterval(action, 10);
+function action(){
+
+    if(c.mouseDown){
+        if(c.tool == 0){
+            c.layers[c.curLayer].remPixel(c.cursorArray[0].xPos, c.cursorArray[0].yPos);
+            c.layers[c.curLayer].draw();
+        }
+        if(c.tool == 1){
+            c.colorBox.addToSet();
+            c.layers[c.curLayer].addPixel(c.cursorArray[0].xPos, c.cursorArray[0].yPos, c.colorBox.colorObj);
+            /*
+            for(var i = -1; i < 2; i++){
+                c.layers[c.curLayer].addPixel(c.cursorArray[0].xPos+i*cGrid.size, c.cursorArray[0].yPos);
+                for(var j = -1; j<2; j++){
+                    c.layers[c.curLayer].addPixel(c.cursorArray[0].xPos, c.cursorArray[0].yPos+j*cGrid.size);
+                }
+            }
+            */
+            //c.layers[c.curLayer].addPixel(c.cursorArray[0].xPos, c.cursorArray[0].yPos);
+            c.layers[c.curLayer].draw();
+        }
+        if(c.tool == 2){
+            curEl.style.width = cGrid.snap(c.cursorArray[0].xPos-mdX)-4+'px';
+            curEl.style.height = cGrid.snap(c.cursorArray[0].yPos-mdY)-4+'px';
+
+            bounds.x1 = Math.floor(mdX/cGrid.size)-1; 
+            bounds.x2 = Math.floor(curEl.offsetWidth/cGrid.size)+bounds.x1; 
+            bounds.y1 = Math.floor(mdY/cGrid.size)-1; 
+            bounds.y2 = Math.floor(curEl.offsetHeight/cGrid.size)+bounds.y1; 
+        }
+    }
+}
+
+    c.overEl.onmouseup = function(e){
+        c.mouseDown = false;
+        if(c.tool ==2){
+            boundsArray.push(bounds);
+            bounds = {};
+        }
+    }
+    c.overEl.onmousemove = function(e){
+        c.cursorArray[0].move(e.offsetX, e.offsetY);
+    }
+    c.overEl.focus();
+    c.overEl.onmouseover = function(){
+        c.overEl.focus();
+
+    }
+    c.overEl.onkeyup = function(e){
+        switch(e.keyCode){
+            case Helper.keyObj.actionKey:
+                c.mouseDown = false;
+                if(c.tool == 2){
+                    boundsArray.push(bounds);
+                    bounds = {};
+                }
+                break;
+        }
+    }
+    c.overEl.onkeydown = function(e){
+        switch(e.keyCode){
+            case Helper.keyObj.actionKey:
+                c.mouseDown = true;
+                break;
+            case Helper.keyObj.pencilTog:
+                c.tool = 0;
+                break;
+            case Helper.keyObj.eraserTog:
+                c.tool = 1;
+                break;
+            case Helper.keyObj.bindTog:
+                mdX = c.cursorArray[0].xPos;
+                mdY = c.cursorArray[0].yPos;
+                divNum ++;
+                curEl = Helper.makeEl({
+                        id:'div'+divNum,
+                        css: {
+                            backgroundColor: 'rgba('+
+                                 Math.floor(Math.random()*255)+','+
+                                 Math.floor(Math.random()*255)+','+
+                                 Math.floor(Math.random()*255)+','+
+                                 '.4)',
+                            position: 'absolute',
+                            borderSizing: 'border-box',
+                            top: cGrid.snap(mdY - c.cursorArray[0].offset)+'px',
+                            left: cGrid.snap(mdX- c.cursorArray[0].offset)+'px',
+                            border: '2px solid',
+                            zIndex: 9959
+                        }
+                        });
+                    c.boundsContainerEl.appendChild(curEl);
+                c.tool = 2;
+                break;
+            case Helper.keyObj.upKey:
+                c.cursorArray[0].yPos -= cGrid.size;
+                c.cursorArray[0].move2();
+                break;
+            case Helper.keyObj.downKey:
+                c.cursorArray[0].yPos += cGrid.size;
+                c.cursorArray[0].move2();
+                break;
+            case Helper.keyObj.leftKey:
+                c.cursorArray[0].xPos -= cGrid.size;
+                c.cursorArray[0].move2();
+                break;
+            case Helper.keyObj.rightKey:
+                c.cursorArray[0].xPos += cGrid.size;
+                c.cursorArray[0].move2();
+                break;
+            case Helper.keyObj.zoomIn:
+                c.zoom(1);
+                break;
+            case Helper.keyObj.zoomOut:
+                c.zoom(-1);
+                break;
+            
+
+        }
+        return false;
+    }
+
+    document.getElementById('addLayer').onmousedown = c.create_new;    
+
+var m = new Map({size: 32, canvas: c});
+    //m.generate();
+
+</script>
+</html>

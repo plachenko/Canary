@@ -1,0 +1,79 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<body>
+    <div id="container" style="float:left;position: relative; width: 400px; height: 400px;"></div>
+    <div id="LayersCont" style="position:relative; float:left;width:300px; font-size:13px; font-family:'Arial', sans-serif;">
+        <div style="border-bottom: 1px solid; float:left; width:100%; text-align:center; font-weight:bold; ">Layers</div>
+        <div id="layerDiv-menuBar" style="width:100%; height: 20px; positon:relative; clear:both;">
+            <a href="#" id="layer-add-btn">Add</a> 
+            <span> | </span>
+            <a href="#" id="layer-rem-btn">Rem</a> 
+            <span> | </span>
+            <a href="#" id="layer-hide-btn">Hide</a> 
+            <span> | Move </span>
+            <a href="#" id="layer-moveup-btn">up</a> 
+            <span> | </span>
+            <a href="#" id="layer-movedn-btn">dn</a> 
+            <span id="currentLayerCont"> | Current: <span id="curLayerNum"></span></span>
+        </div>
+        <div id="layers-container" style="height:100px; overflow-y:auto; overflow-x:hidden;">
+    </div>
+    <div id="FramesCont"style="position:relative; float:left;width:300px;">
+        <div style="border-bottom: 1px solid; float:left; width:100%; text-align:center; font-weight:bold;">Frames</div>
+        <div id="frameDiv-menuBar" style="width:100%; height: 20px; positon:relative; clear:both;">
+            <a href="#" id="frame-add-btn">Add</a> 
+            <span> | </span>
+            <a href="#" id="frame-rem-btn">Rem</a> 
+            <span> | </span>
+            <a href="#" id="frame-moveup-btn">up</a> 
+            <span> | </span>
+            <a href="#" id="frame-movedn-btn">dn</a> 
+            <span> | </span>
+            <a href="#" id="frame-movedn-btn">dup</a> 
+            <span> | </span>
+            <a href="#" id="frame-movedn-btn">play</a> 
+            <span> | </span>
+            <a href="#" id="frame-movedn-btn">stop</a> 
+            <span id="currentFrameCont"> | Cur: <span id="curLayerNum"></span></span>
+        </div>
+        <div id="frames-container" style="height:200px; overflow-y:auto; overflow-x:hidden;"></div>
+    </div>
+</body>
+<script type="text/javascript" src="js/Helper.js"charset="utf-8"></script>
+<script type="text/javascript" src="js/Tools.js"charset="utf-8"></script>
+<script type="text/javascript" src="js/Bar.js"charset="utf-8"></script>
+<script type="text/javascript" src="js/Canary.js"charset="utf-8"></script>
+<script type="text/javascript" src="js/Frame.js"charset="utf-8"></script>
+<script type="text/javascript" src="js/Layer2.js"charset="utf-8"></script>
+<script type="text/javascript" charset="utf-8">
+
+var cnry = new Canary();
+//var curFrame = cnry.currentFrame.ind;
+
+Helper.id('layer-rem-btn').onmouseup = function(){
+    cnry.frameArray[cnry.curFrame].removeLayer();
+}
+Helper.id('layer-add-btn').onmouseup = function(){
+    cnry.frameArray[cnry.curFrame].addLayer();
+}
+Helper.id('layer-moveup-btn').onmouseup = function(){
+    cnry.frameArray[cnry.curFrame].moveLayer(1);
+}
+Helper.id('layer-movedn-btn').onmouseup = function(){
+    cnry.frameArray[cnry.curFrame].moveLayer(-1);
+}
+/*
+Helper.id('layer-hide-btn').onmouseup = function(){
+    frame.currentLayer.hide();
+}
+*/
+Helper.id('frame-add-btn').onmouseup = function(){
+    cnry.addFrame();
+}
+    
+</script>
+</html>
