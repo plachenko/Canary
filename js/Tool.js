@@ -35,7 +35,6 @@ Tool.prototype.rectangle = function(x1,y1,x2,y2){
     drawFromSet();
 }
 Tool.prototype.test = function(){
-    console.log('test!');
 
 }
 Tool.prototype.line = function(x1, y1, x2,y2){

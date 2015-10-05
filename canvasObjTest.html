@@ -73,7 +73,7 @@
             this.height = _h;
         this.layerContainerEl;
             this.layerWidth = (this.width+400)*2;
-            this.layerHeight = (this.width+400)*2;
+            this.layerHeight = (this.height+400)*2;
             this.layerNum = 0;
             this.curLayer = 0;
         this.CursorContainerEl;
@@ -93,6 +93,7 @@
         //ToDo - Check for container.
         this.create();
     }
+/*
 function Map(_obj){
     this.obj = _obj || {};
     this.obj.size = _obj.size || 32;
@@ -122,6 +123,7 @@ Map.prototype.rect = function(_x,_y,_w,_h){
         }
     c.layers[c.curLayer].draw();
 }
+*/
 
     CanaryCanvas.prototype.create = function(){
         this.colorBox = new ColorBox();
@@ -514,8 +516,10 @@ function action(){
 
     document.getElementById('addLayer').onmousedown = c.create_new;    
 
+    /*
 var m = new Map({size: 32, canvas: c});
-    //m.generate();
+    m.generate();
+    */
 
 </script>
 </html>
