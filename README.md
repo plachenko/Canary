@@ -24,4 +24,4 @@ It's a collection of javascript files I made while I was bored over the past few
   
   ?? WHEN DO I GET PAID??
   
-  YOUR WIFE IN THE BACKSEAT OF MY FOREIGN CAR!!
+  YOUR WIFE IN THE BACKSEAT OF MY BRAND NEW FOREIGN CAR!!
